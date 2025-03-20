@@ -32,7 +32,7 @@ class RGB_indicators:
 
     def render(self):
         if self.state == 0:
-            pass
+            self._set_colors()
         elif self.state == 1:
             period = (ticks_ms() - self.last_state_change) % 1500
             

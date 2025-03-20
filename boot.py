@@ -1,28 +1,19 @@
 from machine import Pin
-from utime import sleep
 from rgb_indicators import RGB_indicators
-import wlan_config
-from network import WLAN, STA_IF
+from wlan_config import URL, SECRET
+from terminal_wlan import TermialWLAN
 # import urequests
 
 builtinLedPin = Pin("LED", Pin.OUT)
 rgb_indicators = RGB_indicators(20)
-wlan = WLAN(STA_IF)
-wlan.active(True)
-reconnect = True
+terminal_WLAN = TermialWLAN()
 
 def process():
-    global reconnect
-    if not wlan.isconnected(): 
-        if reconnect:
-            wlan.connect(wlan_config.SSID, wlan_config.PWD)
-            print("Próba nawiązania połączenia")
-            reconnect = False
-            rgb_indicators.start_scanning_network()
+    terminal_WLAN.process()
+    if terminal_WLAN.isTryingToConnect:
+        rgb_indicators.scan_network()
     else:
-        reconnect = True
-        rgb_indicators.turn_off()
-    
+        rgb_indicators.turn_off() 
 
 def render():
     rgb_indicators.render()
@@ -30,7 +21,6 @@ def render():
 
 while True:
     builtinLedPin.toggle()
-    # print("asd")
     process()
     render()
-    sleep(0.5)
+    # sleep(0.5)
