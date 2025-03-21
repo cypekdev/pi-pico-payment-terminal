@@ -13,7 +13,7 @@ class Keyboard:
         self.pressedButtons = []
 
     def process(self):
-        self.pressedButtons.clear()
+        self.pressedButtons = []
         self.R1.on()
         if self.C1.value() == 1: self.pressedButtons.append('1')
         if self.C2.value() == 1: self.pressedButtons.append('2')
