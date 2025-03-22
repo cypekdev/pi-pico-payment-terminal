@@ -27,11 +27,9 @@ class TermialWLAN:
 
                 if self.reconnectAttempt == 0:
                     self._wlan.connect(SAVED_NETWORKS[self.currNetworkIndex]["SSID"], SAVED_NETWORKS[self.currNetworkIndex]["PWD"])
-                    print(f"Pierwsza próba polaczenia {SAVED_NETWORKS[self.currNetworkIndex]['SSID']}")
                     
                 self.reconnectAttempt += 1
             else:
-                print("polaczony")
                 self.isTryingToConnect = False
                 self.reconnectAttempt = 0
 
