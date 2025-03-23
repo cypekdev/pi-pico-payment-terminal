@@ -1,25 +1,30 @@
 from machine import Pin
-from time import ticks_ms
+from time import ticks_ms, sleep_ms
 
 class Keyboard:
-    R1 = Pin(10, Pin.OUT)
-    R2 = Pin(9, Pin.OUT)
-    R3 = Pin(8, Pin.OUT)
-    R4 = Pin(7, Pin.OUT)
-    C1 = Pin(6, Pin.IN, Pin.PULL_DOWN)
-    C2 = Pin(5, Pin.IN, Pin.PULL_DOWN)
-    C3 = Pin(4, Pin.IN, Pin.PULL_DOWN)
     HOLD_TIME = 1000
 
     def __init__(self):        
+        self._previousPressedBtn = None
         self._previousClickedButton = None
         self._clickedTime = None
         self._justClickedButton = None
         self.pressedButton = None
+        self._rowsMap = [(Pin(10, Pin.OUT, value=0), ['1', '2', '3']),
+                        (Pin(9, Pin.OUT, value=0), ['4', '5', '6']),
+                        (Pin(8, Pin.OUT, value=0), ['7', '8', '9']),
+                        (Pin(7, Pin.OUT, value=0), ['*', '0', '#'])]
+        self._collumns = [Pin(6, Pin.IN, Pin.PULL_DOWN),
+                        Pin(5, Pin.IN, Pin.PULL_DOWN),
+                        Pin(4, Pin.IN, Pin.PULL_DOWN)]
 
-    def _register_btn_click(self, btn):
+    def _register_btn_click(self, btn: str | None = None):
         self._justClickedButton = btn
-        if self._justClickedButton != self._previousClickedButton: self._clickedTime = ticks_ms()
+        if self._justClickedButton == None:
+            self._previousPressedBtn = None
+            self._clickedTime = None
+        else:
+            if self._justClickedButton != self._previousClickedButton: self._clickedTime = ticks_ms()
 
     def get_clicked(self):
         if self._justClickedButton == None:
@@ -29,7 +34,11 @@ class Keyboard:
     def get_pressed(self):
         if self._clickedTime != None:
             if (ticks_ms() - self._clickedTime) >= self.HOLD_TIME: 
-                return self._justClickedButton
+                if self._previousPressedBtn != self._justClickedButton:
+                    self._previousPressedBtn = self._justClickedButton
+                    return self._justClickedButton 
+
+        return None
 
     def process(self):
         self._previousClickedButton = self._justClickedButton
@@ -40,26 +49,17 @@ class Keyboard:
             else:
                 self.pressedButton = None
         
-        self.R1.on()
-        if self.C1.value(): self._register_btn_click('1'); return
-        if self.C2.value(): self._register_btn_click('2'); return
-        if self.C3.value(): self._register_btn_click('3'); return
-        self.R1.off()
-        self.R2.on()
-        if self.C1.value(): self._register_btn_click('4'); return
-        if self.C2.value(): self._register_btn_click('5'); return
-        if self.C3.value(): self._register_btn_click('6'); return
-        self.R2.off()
-        self.R3.on()
-        if self.C1.value(): self._register_btn_click('7'); return
-        if self.C2.value(): self._register_btn_click('8'); return
-        if self.C3.value(): self._register_btn_click('9'); return
-        self.R3.off()
-        self.R4.on()
-        if self.C1.value(): self._register_btn_click('*'); return
-        if self.C2.value(): self._register_btn_click('0'); return
-        if self.C3.value(): self._register_btn_click('#'); return
-        self.R4.off()
 
-        self._justClickedButton = None
-        self._clickedTime = None
+        for row, labels in self._rowsMap:
+            row.high()
+            # print(row)
+            for coll in range(3):
+               
+                if self._collumns[coll].value() == 1:
+                    row.low()
+                    self._register_btn_click(labels[coll])
+                    return
+            
+            row.low()
+
+        self._register_btn_click(None)

@@ -73,3 +73,11 @@ class RGB_indicators:
                 self._set_colors()
                 self._state = 0
                 return
+            
+
+if __name__ == "__main__":
+    rgb = RGB_indicators()
+    rgb.start_scanning_network()
+
+    while True:
+        rgb.render()
