@@ -39,7 +39,6 @@ class RGB_indicators:
             self._set_colors()
         elif self._state == 1:
             period = (ticks_ms() - self._last_state_change) % 1500
-            
             if period < 250:
                 self._set_colors(first = self.COLOR_BLUE)
                 return
@@ -73,11 +72,3 @@ class RGB_indicators:
                 self._set_colors()
                 self._state = 0
                 return
-            
-
-if __name__ == "__main__":
-    rgb = RGB_indicators()
-    rgb.start_scanning_network()
-
-    while True:
-        rgb.render()

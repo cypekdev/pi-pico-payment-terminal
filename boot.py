@@ -5,6 +5,7 @@ from terminal_wlan import TermialWLAN
 from keyboard import Keyboard
 from terminal_lcd import TermianlLCD
 from terminal_communication import TerminalCommunication
+from mfrc522 import MFRC522
 
 builtinLedPin = Pin("LED", Pin.OUT)
 cardPresencePin = Pin(3, Pin.IN, Pin.PULL_UP)
@@ -13,6 +14,8 @@ terminal_WLAN = TermialWLAN()
 keyboard = Keyboard()
 terminal_LCD = TermianlLCD()
 termianl_communication = TerminalCommunication()
+insertable_card_reader = MFRC522(sck=18,mosi=19,miso=16,rst=22,cs=17)
+proximity_card_reader = MFRC522(sck=14,mosi=15,miso=12,rst=11,cs=13,spi_id=1)
 state = 0
 ammount = ''
 blik_code = ''
@@ -54,6 +57,16 @@ def process_blik_payment():
 def process_card_payment():
     pass
 
+def get_card_id(mfrc: MFRC522) -> int|None:
+    mfrc.init()
+    (stat, tagtype) = mfrc.request(mfrc.REQIDL)
+    if stat == mfrc.OK:
+        (stat, uid) = mfrc.SelectTagSN()
+        if stat == mfrc.OK:
+            card = int.from_bytes(bytes(uid),'little')
+            return card
+    return None
+
 def process():
     global state
     global ammount
@@ -62,19 +75,26 @@ def process():
     terminal_WLAN.process()
     if terminal_WLAN.isTryingToConnect:
         rgb_indicators.scan_network()
+        terminal_LCD.connecting()
     else:
-        rgb_indicators.turn_off() 
+        rgb_indicators.turn_off()
+        
         keyboard.process()
 
         clicked = keyboard.get_clicked()
         pressed = keyboard.get_pressed()
+        if clicked != None: print(clicked)
+        if pressed != None: print(pressed + " pressed")
 
         if state == 0: # waiting for action
-            if clicked == '*':
-                state = 1
-                terminal_LCD.entering_amount_blik()
-            elif clicked == '#':
-                state = 2
+            terminal_LCD.awaiting_for_action()
+            if clicked != None:
+                if clicked == '*':
+                    state = 1
+                    terminal_LCD.entering_amount_blik()
+                elif clicked == '#':
+                    state = 2
+                    terminal_LCD.entering_amount_card()
 
         elif state == 1: # blik enter ammount
             if pressed != None:
@@ -126,14 +146,15 @@ def process():
 
 
         elif state == 4: # waiting for card
-            pass
+            card_id = None
+            if Pin(cardPresencePin).value():                
+                card_id = get_card_id(insertable_card_reader)
+            else:
+                card_id = get_card_id(proximity_card_reader)
+            if card_id: print(card_id)
 
         elif state == 5: # enter card pin
             pass
-
-
-
-
 
 def render():
     rgb_indicators.render()
