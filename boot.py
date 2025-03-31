@@ -119,8 +119,8 @@ def process():
                     state = 0
                 elif pressed == '#':
                     if is_float(ammount):
-                        state = 3
-                        terminal_LCD.entering_amount_card()
+                        state = 4
+                        terminal_LCD.waiting_for_card()
             elif clicked != None:
                 if clicked == '*':
                     ammount = ammount[:len(ammount) - 1]
@@ -143,7 +143,6 @@ def process():
                 else:
                     add_to_blik_code(clicked)
                 terminal_LCD.blik_code = blik_code
-
 
         elif state == 4: # waiting for card
             card_id = None

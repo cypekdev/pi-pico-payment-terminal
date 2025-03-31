@@ -58,6 +58,7 @@ class TermianlLCD:
         self._lcd.putstr("Card")
         self._lcd.move_to(13, 1)
         self._lcd.putstr("PLN")
+        self._lcd.move_to(12, 1)
         self._lcd.show_cursor()
         self._lcd.blink_cursor_on()
 
@@ -84,9 +85,12 @@ class TermianlLCD:
         self._lcd.move_to(0, 0)
         self._lcd.putstr("To Pay:")
         self._lcd.move_to(12, 0)
-        self._lcd.putstr("Blik")
+        self._lcd.putstr("Card")
         self._lcd.move_to(13, 1)
         self._lcd.putstr("PLN")
+        amount_to_display = f"{float(self.amount):.2f}"
+        self._lcd.move_to(12 - len(amount_to_display), 1)
+        self._lcd.putstr(amount_to_display[-12:])
 
     def start_entering_card_pin(self):
         self._status = 5
@@ -152,8 +156,13 @@ class TermianlLCD:
 
         elif self._status == 1 or self._status == 2 or self._status == 4:
             if self._previous_amount != self.amount:
-                amount_to_display = self.amount[-12]
-                self._lcd.move_to(len(amount_to_display) - 12, 1)
+                amount_to_display = ""
+                full_len = len(self.amount)
+                if full_len >= 12:
+                    amount_to_display = self.amount
+                else:
+                    amount_to_display = "".join((' ' * (12 - len(self.amount)), self.amount[-12:]))
+                self._lcd.move_to(0, 1)
                 self._lcd.putstr(amount_to_display)
                 self._lcd.move_to(12, 1)
                 self._previous_amount = self.amount
