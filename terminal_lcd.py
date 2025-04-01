@@ -3,6 +3,9 @@ from pico_i2c_lcd import I2cLcd
 from time import ticks_ms
 
 class TermianlLCD:
+    def _get_2f_amount(self) -> str:
+        return f"{float(self.amount):.2f}"
+
     def __init__(self) -> None:
         i2c = I2C(1, scl=Pin(27), sda=Pin(26), freq=400000)
         self._lcd = I2cLcd(i2c, 0x27, 2, 16)
@@ -44,6 +47,7 @@ class TermianlLCD:
         self._lcd.putstr("Blik")
         self._lcd.move_to(13, 1)
         self._lcd.putstr("PLN")
+        self._lcd.move_to(12, 1)
         self._lcd.show_cursor()
         self._lcd.blink_cursor_on()
 
@@ -68,13 +72,14 @@ class TermianlLCD:
         self._previous_blik_code = self.blik_code
         self._lcd.clear()
         self._lcd.move_to(0, 0)
-        self._lcd.putstr(self.amount)
+        self._lcd.putstr(self._get_2f_amount())
         self._lcd.move_to(13, 0)
         self._lcd.putstr("PLN")
         self._lcd.move_to(0, 1)
         self._lcd.putstr("Blik:")
         self._lcd.move_to(10, 1)
         self._lcd.putstr("______")
+        self._lcd.move_to(10, 1)
         self._lcd.show_cursor()
         self._lcd.blink_cursor_on()
 
@@ -88,7 +93,7 @@ class TermianlLCD:
         self._lcd.putstr("Card")
         self._lcd.move_to(13, 1)
         self._lcd.putstr("PLN")
-        amount_to_display = f"{float(self.amount):.2f}"
+        amount_to_display = self._get_2f_amount()
         self._lcd.move_to(12 - len(amount_to_display), 1)
         self._lcd.putstr(amount_to_display[-12:])
 

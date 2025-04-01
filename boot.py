@@ -6,17 +6,20 @@ from keyboard import Keyboard
 from terminal_lcd import TermianlLCD
 from terminal_communication import TerminalCommunication
 from mfrc522 import MFRC522
+from buzzer import Buzzer
 
 builtinLedPin = Pin("LED", Pin.OUT)
 cardPresencePin = Pin(3, Pin.IN, Pin.PULL_UP)
 rgb_indicators = RGB_indicators()
 terminal_WLAN = TermialWLAN()
 keyboard = Keyboard()
+buzzer = Buzzer()
 terminal_LCD = TermianlLCD()
 termianl_communication = TerminalCommunication()
 insertable_card_reader = MFRC522(sck=18,mosi=19,miso=16,rst=22,cs=17)
 proximity_card_reader = MFRC522(sck=14,mosi=15,miso=12,rst=11,cs=13,spi_id=1)
 state = 0
+require_card_pin = False
 ammount = ''
 blik_code = ''
 
@@ -119,6 +122,7 @@ def process():
                     state = 0
                 elif pressed == '#':
                     if is_float(ammount):
+                        require_card_pin = float(ammount) >= 100
                         state = 4
                         terminal_LCD.waiting_for_card()
             elif clicked != None:
@@ -150,7 +154,10 @@ def process():
                 card_id = get_card_id(insertable_card_reader)
             else:
                 card_id = get_card_id(proximity_card_reader)
-            if card_id: print(card_id)
+            if card_id:
+                state = 5
+                buzzer.on_card_reading()
+                print(card_id)
 
         elif state == 5: # enter card pin
             pass
@@ -158,6 +165,7 @@ def process():
 def render():
     rgb_indicators.render()
     terminal_LCD.render()
+    buzzer.render()
 
 
 while True:

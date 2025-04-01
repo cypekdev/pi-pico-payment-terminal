@@ -3,7 +3,7 @@ from time import ticks_ms
 
 class Buzzer:
     def __init__(self):
-        self._pin = Pin(2, Pin.OUT)
+        self._pin = Pin(21, Pin.OUT)
         self.turn_off()
 
     def turn_off(self):
@@ -43,5 +43,3 @@ class Buzzer:
             else:
                 self._pin.off()
                 self.turn_off()
-
-
