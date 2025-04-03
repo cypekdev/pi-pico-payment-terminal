@@ -19,9 +19,13 @@ termianl_communication = TerminalCommunication()
 insertable_card_reader = MFRC522(sck=18,mosi=19,miso=16,rst=22,cs=17)
 proximity_card_reader = MFRC522(sck=14,mosi=15,miso=12,rst=11,cs=13,spi_id=1)
 state = 0
-require_card_pin = False
-ammount = ''
-blik_code = ''
+ammount = ""
+blik_code = ""
+card_id = None
+card_code = None
+require_card_pin = None
+payment_type = None # 0 - blik, 1 - card
+
 
 def is_float(string):
     try:
@@ -74,6 +78,10 @@ def process():
     global state
     global ammount
     global blik_code
+    global require_card_pin
+    global payment_type
+    global card_id
+    global card_code
 
     terminal_WLAN.process()
     if terminal_WLAN.isTryingToConnect:
@@ -94,9 +102,11 @@ def process():
             if clicked != None:
                 if clicked == '*':
                     state = 1
+                    payment_type = 0
                     terminal_LCD.entering_amount_blik()
                 elif clicked == '#':
                     state = 2
+                    payment_type = 1
                     terminal_LCD.entering_amount_card()
 
         elif state == 1: # blik enter ammount
@@ -138,6 +148,7 @@ def process():
             if pressed != None:
                 if pressed == '*':
                     state = 1
+                    terminal_LCD.entering_amount_blik()
             elif clicked != None:
                 if clicked == '*':
                     blik_code = blik_code[:len(blik_code) - 1]
@@ -155,12 +166,27 @@ def process():
             else:
                 card_id = get_card_id(proximity_card_reader)
             if card_id:
-                state = 5
                 buzzer.on_card_reading()
-                print(card_id)
+                if require_card_pin:
+                    state = 5
+                else:
+                    state = 6
 
         elif state == 5: # enter card pin
             pass
+
+        elif state == 6: # processing payment
+            response = None
+            if payment_type == 0:
+                response = termianl_communication.blik_transfer(int(blik_code), float(ammount))
+            elif payment_type == 1:
+                if card_id != None:
+                    if not require_card_pin and card_code != None: 
+                        response = termianl_communication.card_transfer(card_id, float(ammount), int(card_code))
+                    else:
+                        response = termianl_communication.card_transfer(card_id, float(ammount))
+            if response != None:
+                type(response) 
 
 def render():
     rgb_indicators.render()

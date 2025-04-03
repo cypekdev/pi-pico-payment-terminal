@@ -106,7 +106,7 @@ class TermianlLCD:
         self._lcd.move_to(3, 0)
         self._lcd.putstr("Enter pin:")
         self._lcd.move_to(5, 1)
-        self._lcd.putstr("____")
+        self._lcd.putstr("____")        
 
     def start_payment_accepted(self):
         self._status = 6
@@ -124,6 +124,15 @@ class TermianlLCD:
         self._lcd.clear()
         self._lcd.move_to(2, 0)
         self._lcd.putstr("Connecting.")
+
+    def start_processin_payment(self):
+        self._status = 9
+        self._lcd.hide_cursor()
+        self._lcd.clear()
+        self._lcd.move_to(3, 0)
+        self._lcd.putstr("Processing")
+        self._lcd.move_to(4, 1)
+        self._lcd.putstr("Payment")
 
     def connecting(self):
         if self._status != 8: self.start_connecting()
