@@ -108,14 +108,22 @@ class TermianlLCD:
         self._lcd.move_to(5, 1)
         self._lcd.putstr("____")        
 
-    def start_payment_accepted(self):
+    def start_payment_accepted(self, paymentId):
         self._status = 6
-        self.paymentId = ""
-
+        self._lcd.hide_cursor()
+        self._lcd.clear()
+        self._lcd.move_to(0, 0)
+        self._lcd.putstr(f"Payment {paymentId}")
+        self._lcd.move_to(4, 1)
+        self._lcd.putstr("Accepted")
     def start_payment_error(self):
+        self.error = ""
         self._last_status_change = ticks_ms()
         self._status = 7
-        self.error = ""
+        self._lcd.hide_cursor()
+        self._lcd.clear()
+        self._lcd.move_to(0, 0)
+        self._lcd.putstr("Payment REJECTED")
 
     def start_connecting(self):
         self._status = 8
@@ -191,28 +199,18 @@ class TermianlLCD:
         elif self._status == 5:
             if self._previous_card_pin_length != self.card_pin_length:
                 self._lcd.move_to(5, 1)
-                self._textSecondRow = "".join(('*' * self.card_pin_length, '_' * (4 - self.card_pin_length)))
+                self._lcd.putstr("".join(('*' * self.card_pin_length, '_' * (4 - self.card_pin_length))))
                 self._previous_card_pin_length = self.card_pin_length
 
-        elif self._status == 6:
-            elapsed = ticks_ms() - self._last_status_change
-            if elapsed < 3000:
-                self._textFirstRow = f"Payment {str(self.paymentId)}".center(16)
-                self._textSecondRow = "Accepted".center(16)
-            else:
-                self.start_awaiting_for_action()
-
         elif self._status == 7:
-            self._textFirstRow = "Payment REJECTED"
-          
             errorLength = len(self.error)
             if errorLength > 16:
                 elapsed_scrolling_cycle = (ticks_ms() - self._last_status_change) % (500 * (errorLength - 15))
                 character_shift = int(elapsed_scrolling_cycle / 500)
 
-                self._textSecondRow = self.error[character_shift:(17+character_shift)]
+                self._lcd.putstr(self.error[character_shift:(17+character_shift)])
             else:
-                self._textSecondRow = self.error.center(16)
+                self._lcd.putstr(self.error)
         
         elif self._status == 8:
             elapsed = (ticks_ms() - self._last_status_change) % 1500

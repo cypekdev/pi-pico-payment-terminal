@@ -25,7 +25,7 @@ card_id = None
 card_code = None
 require_card_pin = None
 payment_type = None # 0 - blik, 1 - card
-
+wlan_has_been_connected = False
 
 def is_float(string):
     try:
@@ -58,12 +58,6 @@ def add_to_blik_code(char: str):
     if len(blik_code) < 6 and char.isdigit():
         blik_code += char
 
-def process_blik_payment():
-    pass
-
-def process_card_payment():
-    pass
-
 def get_card_id(mfrc: MFRC522) -> int|None:
     mfrc.init()
     (stat, tagtype) = mfrc.request(mfrc.REQIDL)
@@ -82,20 +76,23 @@ def process():
     global payment_type
     global card_id
     global card_code
+    global wlan_has_been_connected
 
     terminal_WLAN.process()
     if terminal_WLAN.isTryingToConnect:
         rgb_indicators.scan_network()
         terminal_LCD.connecting()
+        wlan_has_been_connected = False
     else:
-        rgb_indicators.turn_off()
-        
         keyboard.process()
-
         clicked = keyboard.get_clicked()
         pressed = keyboard.get_pressed()
-        if clicked != None: print(clicked)
-        if pressed != None: print(pressed + " pressed")
+        # if clicked != None: print(clicked)
+        # if pressed != None: print(pressed + " pressed")
+
+        if not wlan_has_been_connected:
+            wlan_has_been_connected = True
+            rgb_indicators.start_on_connected()
 
         if state == 0: # waiting for action
             terminal_LCD.awaiting_for_action()
@@ -153,8 +150,7 @@ def process():
                 if clicked == '*':
                     blik_code = blik_code[:len(blik_code) - 1]
                 elif clicked == '#':
-                    pass
-                    process_blik_payment()
+                    state = 6
                 else:
                     add_to_blik_code(clicked)
                 terminal_LCD.blik_code = blik_code
@@ -177,16 +173,34 @@ def process():
 
         elif state == 6: # processing payment
             response = None
-            if payment_type == 0:
-                response = termianl_communication.blik_transfer(int(blik_code), float(ammount))
-            elif payment_type == 1:
-                if card_id != None:
-                    if not require_card_pin and card_code != None: 
-                        response = termianl_communication.card_transfer(card_id, float(ammount), int(card_code))
+            try:
+                if payment_type == 0:
+                    response = termianl_communication.blik_transfer(int(blik_code), float(ammount))
+                elif payment_type == 1:
+                    if card_id != None:
+                        if not require_card_pin and card_code != None: 
+                            response = termianl_communication.card_transfer(card_id, float(ammount), int(card_code))
+                        else:
+                            response = termianl_communication.card_transfer(card_id, float(ammount))
+                if response == None:
+                    raise Exception("None JSON response content")
+                else:
+                    if response.status == "SUCCESS":
+                        terminal_LCD.start_payment_accepted(response.transactionid)
+                        state = 7
                     else:
-                        response = termianl_communication.card_transfer(card_id, float(ammount))
-            if response != None:
-                type(response) 
+                        raise Exception(response.status)
+            except Exception as e:
+                # buzzer.on_payment_rejected()
+                rgb_indicators.start_payment_rejected()
+                terminal_LCD.error = str(e) 
+                terminal_LCD.start_payment_error()
+                state = 7
+
+        elif state == 7: # waiting for click to return
+            if clicked != None: 
+                state = 0
+                rgb_indicators.turn_off()
 
 def render():
     rgb_indicators.render()
