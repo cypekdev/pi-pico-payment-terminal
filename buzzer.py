@@ -31,15 +31,16 @@ class Buzzer:
         elif self._state == 2:
             elapsed = ticks_ms() - self._lastStateChange
             if elapsed < 100:
-                self._pin.on()
+                self._pin.off()
             elif elapsed < 200:
-                self._pin.off()
-            elif elapsed < 300:
                 self._pin.on()
-            elif elapsed < 400:
+            elif elapsed < 300:
                 self._pin.off()
+            elif elapsed < 400:
+                self._pin.on()
             elif elapsed < 500:
+                self._pin.off()
+            elif elapsed < 600:
                 self._pin.on()
             else:
-                self._pin.off()
                 self.turn_off()

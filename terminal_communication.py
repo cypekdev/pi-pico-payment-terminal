@@ -14,6 +14,7 @@ class TerminalCommunication:
     def check_server(self):
         resp = get(f"{URL}/terminal-api/server-status.php", headers = self._headers, timeout = self.TIMEOUT_VALUE)
         parsedResp = resp.json()
+
         resp.close()
         return parsedResp
 

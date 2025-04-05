@@ -62,6 +62,7 @@ def get_card_id(mfrc: MFRC522) -> int|None:
     mfrc.init()
     (stat, tagtype) = mfrc.request(mfrc.REQIDL)
     if stat == mfrc.OK:
+        rgb_indicators.card_reading()
         (stat, uid) = mfrc.SelectTagSN()
         if stat == mfrc.OK:
             card = int.from_bytes(bytes(uid),'little')
@@ -156,12 +157,14 @@ def process():
                 terminal_LCD.blik_code = blik_code
 
         elif state == 4: # waiting for card
+            rgb_indicators.ready_to_read()
             card_id = None
-            if Pin(cardPresencePin).value():                
+            if Pin(cardPresencePin).value():
                 card_id = get_card_id(insertable_card_reader)
             else:
                 card_id = get_card_id(proximity_card_reader)
             if card_id:
+                rgb_indicators.request_processing()
                 buzzer.on_card_reading()
                 if require_card_pin:
                     state = 5
@@ -169,7 +172,7 @@ def process():
                     state = 6
 
         elif state == 5: # enter card pin
-            pass
+            state = 6
 
         elif state == 6: # processing payment
             response = None
@@ -185,17 +188,23 @@ def process():
                 if response == None:
                     raise Exception("None JSON response content")
                 else:
-                    if response.status == "SUCCESS":
+                    if "status" not in response:
+                        raise Exception("Invalid JSON response")
+                    if response["status"] == "SUCCESS":
                         terminal_LCD.start_payment_accepted(response.transactionid)
+                        rgb_indicators.start_request_accepted()
                         state = 7
                     else:
                         raise Exception(response.status)
             except Exception as e:
-                # buzzer.on_payment_rejected()
-                rgb_indicators.start_payment_rejected()
-                terminal_LCD.error = str(e) 
+                buzzer.on_payment_rejected()
+                terminal_LCD.error = str(e)
+                print(str(e))
+                print(response)
                 terminal_LCD.start_payment_error()
+                rgb_indicators.start_payment_rejected()
                 state = 7
+            ammount = ""
 
         elif state == 7: # waiting for click to return
             if clicked != None: 
